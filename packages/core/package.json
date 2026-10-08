@@ -1,0 +1,21 @@
+{
+  "name": "@hyperqueue/core",
+  "version": "1.0.0",
+  "description": "Core distributed task queue and DAG workflow orchestration engine",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/**/*.test.js"
+  },
+  "dependencies": {
+    "ioredis": "^5.4.1",
+    "prom-client": "^15.1.3",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "@types/uuid": "^9.0.8",
+    "typescript": "^5.4.5"
+  }
+}

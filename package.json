@@ -1,0 +1,31 @@
+{
+  "name": "hyperqueue-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "High-Performance Distributed Background Task & DAG Workflow Orchestration Engine in TypeScript",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run --workspace=@hyperqueue/core build && npm run --workspace=@hyperqueue/client build && npm run --workspace=@hyperqueue/server build && npm run --workspace=@hyperqueue/web build",
+    "test": "npm run --workspaces --if-present test",
+    "dev:server": "npm run --workspace=@hyperqueue/server dev",
+    "dev:web": "npm run --workspace=@hyperqueue/web dev",
+    "lint": "npm run --workspaces --if-present lint"
+  },
+  "keywords": [
+    "distributed-systems",
+    "task-queue",
+    "workflow-engine",
+    "dag",
+    "redis",
+    "typescript",
+    "concurrency",
+    "distributed-locking"
+  ],
+  "author": "HyperQueue Team",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}
