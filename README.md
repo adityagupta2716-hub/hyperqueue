@@ -75,6 +75,12 @@ Benchmarked with [`k6`](https://k6.io/) on an 8-core machine, Redis 7.2, 100,000
 - [Docker](https://docs.docker.com/get-docker/) & Docker Compose
 - Node.js 20+ & npm
 
+### 0. Clone the Repository
+```bash
+git clone https://github.com/adityagupta2716-hub/hyperqueue.git
+cd hyperqueue
+```
+
 ### 1. Start Infrastructure (Redis + PostgreSQL)
 ```bash
 docker compose up -d
