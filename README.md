@@ -1,70 +1,81 @@
 # ⚡ HyperQueue
 
-> **High-Performance Distributed Background Task & DAG Workflow Orchestration Engine in TypeScript.**
+> **High-Performance Distributed Background Task & DAG Workflow Orchestration Engine — built in TypeScript.**
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue.svg?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
-[![Redis](https://img.shields.io/badge/Redis-7.2-red.svg?style=flat-square&logo=redis)](https://redis.io/)
-[![CI](https://img.shields.io/badge/CI-Passing-brightgreen.svg?style=flat-square&logo=githubactions)](https://github.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.4-3178C6.svg?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Redis](https://img.shields.io/badge/Redis-7.2-DC382D.svg?style=flat-square&logo=redis&logoColor=white)](https://redis.io/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED.svg?style=flat-square&logo=docker&logoColor=white)](https://docs.docker.com/compose/)
+[![k6](https://img.shields.io/badge/k6-Load%20Testing-7D64FF.svg?style=flat-square&logo=k6&logoColor=white)](https://k6.io/)
+[![CI](https://github.com/adityagupta2716-hub/hyperqueue/actions/workflows/ci.yml/badge.svg)](https://github.com/adityagupta2716-hub/hyperqueue/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+
+HyperQueue is an enterprise-grade distributed job scheduler and workflow engine designed for **high throughput**, **atomic task leasing**, and **zero double-processing guarantees** under heavy concurrency — inspired by the internals of systems like AWS SQS and Celery.
 
 ---
 
 ## 📌 Architecture Overview
 
-HyperQueue is an enterprise-grade distributed job scheduler and workflow engine designed for high throughput, atomic task leasing, and zero double-processing guarantees under heavy concurrency.
-
 ```mermaid
 flowchart TD
     Client["Client / API Gateway\n(Express / TypeScript SDK)"] -->|Submit Task / DAG| Producer["Task Ingestion Layer"]
-    Producer -->|Atomic Multi-Set Lua| RedisQueue["Redis Sorted Sets & Streams\n(Priority & Delayed Queues)"]
-    
-    subgraph "Distributed Worker Cluster"
+    Producer -->|Atomic Multi-Set Lua Script| RedisQueue["Redis Sorted Sets & Streams\n(Priority & Delayed Queues)"]
+
+    subgraph Workers["Distributed Worker Cluster"]
         W1["Worker Node 1\n(Concurrency: 10)"]
         W2["Worker Node 2\n(Concurrency: 10)"]
         W3["Worker Node 3\n(Concurrency: 10)"]
     end
-    
-    RedisQueue -->|Atomic Lease with Visibility Lock| W1
-    RedisQueue -->|Atomic Lease with Visibility Lock| W2
-    RedisQueue -->|Atomic Lease with Visibility Lock| W3
-    
-    W1 -->|Heartbeat & Progress| DB["PostgreSQL / State Store"]
+
+    RedisQueue -->|Atomic Lease + Visibility Lock| W1
+    RedisQueue -->|Atomic Lease + Visibility Lock| W2
+    RedisQueue -->|Atomic Lease + Visibility Lock| W3
+
+    W1 -->|Heartbeat & Progress| DB["PostgreSQL State Store"]
     W2 -->|Heartbeat & Progress| DB
     W3 -->|Heartbeat & Progress| DB
-    
+
+    DB -->|Failed Jobs| DLQ["Dead-Letter Queue (DLQ)"]
     DB -->|Real-time Pub/Sub| DashWS["WebSocket Telemetry Server"]
-    DashWS -->|Live Worker & Job Metrics| Dashboard["Real-Time Monitoring Dashboard"]
+    DashWS -->|Live Worker & Job Metrics| Dashboard["Real-Time Monitoring Dashboard\n(localhost:3000)"]
 ```
 
 ---
 
-## ✨ Key System Features
+## ✨ Key Features
 
-* 🔒 **Atomic Distributed Locking & Leasing:** Uses Redis Lua scripts to eliminate race conditions between worker pools during task acquisition.
-* 🌳 **DAG Workflow Engine:** Supports multi-step job pipelines with dependency graphs, topological sorting, and cycle detection (Kahn's Algorithm).
-* ⏱️ **Priority & Delayed Queues:** Precise scheduling with millisecond-resolution delayed execution using Redis Sorted Sets (`ZSET`).
-* 🔄 **Exponential Backoff & Dead-Letter Queue (DLQ):** Automatic failure retries with jitter and dead-letter queue routing upon reaching max retries.
-* 📊 **Live Telemetry & Observability:** Real-time WebSockets streaming and Prometheus metrics exporter (`/metrics`).
-* 🛡️ **Graceful Shutdown & At-Least-Once Delivery:** Captures `SIGINT`/`SIGTERM` to safely release visibility timeouts and drain worker loops.
+| Feature | Description |
+|---|---|
+| 🔒 **Atomic Locking via Lua Scripts** | Redis Lua eliminates race conditions — check + lease runs in a single non-preemptible step |
+| 🌳 **DAG Workflow Engine** | Multi-step pipelines with dependency graphs, topological sort, and Kahn's cycle detection |
+| ⏱️ **Priority & Delayed Queues** | Millisecond-resolution scheduling with Redis Sorted Sets (`ZSET`) |
+| 🔄 **Exponential Backoff + DLQ** | Automatic retries with jitter; dead-letter queue routing after max retries |
+| 📊 **Live Telemetry** | WebSocket streaming + Prometheus `/metrics` endpoint for real-time observability |
+| 🛡️ **Graceful Shutdown** | Handles `SIGINT`/`SIGTERM` — drains worker loops and releases visibility timeouts safely |
+| 🧩 **Monorepo Architecture** | Split across `packages/core`, `packages/server`, `packages/client`, `packages/web` |
 
 ---
 
-## ⚡ Performance & Benchmarks
+## ⚡ Performance Benchmarks
 
-Benchmarked using `k6` on an 8-core machine with Redis 7.2:
+Benchmarked with [`k6`](https://k6.io/) on an 8-core machine, Redis 7.2, 100,000 requests:
 
-| Metric | Measured Result |
-| :--- | :--- |
+| Metric | Result |
+|:---|:---|
 | **Throughput (Enqueue)** | **12,450 req/sec** |
 | **p95 Latency** | **8.2 ms** |
 | **p99 Latency** | **18.4 ms** |
-| **Error Rate** | **0.00% (0 / 100,000 requests)** |
+| **Error Rate** | **0.00%** (0 / 100,000) |
 
 ---
 
 ## 🚀 Quickstart
 
-### 1. Start Infrastructure
+### Prerequisites
+- [Docker](https://docs.docker.com/get-docker/) & Docker Compose
+- Node.js 20+ & npm
+
+### 1. Start Infrastructure (Redis + PostgreSQL)
 ```bash
 docker compose up -d
 ```
@@ -75,28 +86,27 @@ npm install
 npm run build
 ```
 
-### 3. Start Backend & Workers
+### 3. Start Backend Server & Workers
 ```bash
 npm run dev:server
 ```
 
-### 4. Start Live Telemetry Dashboard
+### 4. Start Live Dashboard
 ```bash
 npm run dev:web
 ```
-Open [http://localhost:3000](http://localhost:3000) to inspect real-time job execution.
+Open [http://localhost:3000](http://localhost:3000) to watch real-time job execution metrics.
 
 ---
 
-## 💻 Code Example
+## 💻 Code Examples
 
-### Enqueueing a Priority Job
+### Enqueue a Priority Job
 ```typescript
 import { HyperClient } from '@hyperqueue/client';
 
 const client = new HyperClient({ redisUrl: 'redis://localhost:6379' });
 
-// Push high-priority task with idempotency key
 const job = await client.enqueue(
   'send-welcome-email',
   { userId: 'usr_8492', email: 'alex@company.com' },
@@ -110,37 +120,62 @@ const job = await client.enqueue(
 console.log(`Enqueued Job ID: ${job.id}`);
 ```
 
-### Executing a DAG Workflow
+### Submit a DAG Workflow
 ```typescript
-// Multi-step pipeline: (Upload) -> (Transcode & Extract Audio) -> (Notify)
+// Pipeline: (Upload) → (Transcode & Extract Audio) → (Notify)
 await client.submitWorkflow('video-processing-pipeline', [
-  { id: 'upload', name: 'upload-video', data: { file: 'raw.mp4' }, dependencies: [] },
-  { id: 'transcode', name: 'transcode-1080p', data: { preset: 'hd' }, dependencies: ['upload'] },
-  { id: 'extract-audio', name: 'extract-aac', data: { bitrate: '320k' }, dependencies: ['upload'] },
-  { id: 'notify', name: 'send-complete-webhook', data: { target: 'api.io' }, dependencies: ['transcode', 'extract-audio'] },
+  { id: 'upload',        name: 'upload-video',          data: { file: 'raw.mp4' },   dependencies: [] },
+  { id: 'transcode',     name: 'transcode-1080p',        data: { preset: 'hd' },      dependencies: ['upload'] },
+  { id: 'extract-audio', name: 'extract-aac',            data: { bitrate: '320k' },   dependencies: ['upload'] },
+  { id: 'notify',        name: 'send-complete-webhook',  data: { target: 'api.io' },  dependencies: ['transcode', 'extract-audio'] },
 ]);
 ```
 
 ---
 
-## 🧠 System Design Trade-offs & FAQ (Interview Notes)
+## 📦 Package Structure
+
+```
+hyperqueue/
+├── packages/
+│   ├── core/        # Queue engine, Lua scripts, DAG engine, DLQ logic
+│   ├── server/      # Express REST API, WebSocket telemetry, Prometheus exporter
+│   ├── client/      # TypeScript SDK for job submission
+│   └── web/         # Real-time monitoring dashboard (React)
+├── benchmarks/      # k6 load test scripts
+├── docker-compose.yml
+└── tsconfig.base.json
+```
+
+---
+
+## 🧠 System Design Deep-Dive
 
 <details>
-<summary><b>1. Why Redis Lua scripts instead of standard Redis transactions (MULTI/EXEC)?</b></summary>
-In high-concurrency environments, <code>MULTI/EXEC</code> commands cannot make conditional branching decisions based on values read during the transaction. Lua scripts run atomically inside Redis's single-threaded engine, ensuring that checking job availability and leasing the lock occurs in a single non-preemptible step.
+<summary><b>Why Redis Lua scripts instead of MULTI/EXEC transactions?</b></summary>
+
+`MULTI/EXEC` cannot make conditional decisions based on values read mid-transaction. Lua scripts run **atomically inside Redis's single-threaded engine**, ensuring the check-and-lease operation is a single non-preemptible step — eliminating all double-processing race conditions.
 </details>
 
 <details>
-<summary><b>2. How is the "Thundering Herd" problem avoided?</b></summary>
-When multiple workers compete for leased jobs, exponential random jitter is added to retry intervals to prevent all workers from hitting Redis simultaneously.
+<summary><b>How is the "Thundering Herd" problem avoided?</b></summary>
+
+When many workers compete for jobs, exponential **random jitter** is added to retry intervals, preventing all workers from hammering Redis simultaneously after a burst of job completions.
 </details>
 
 <details>
-<summary><b>3. How are worker crashes handled?</b></summary>
-Each leased task has a <code>visibilityTimeout</code>. Workers periodically heartbeat to extend the lease. If a worker node crashes, the lease expires and the job is automatically picked up by another active worker.
+<summary><b>How are worker crashes handled?</b></summary>
+
+Each leased task has a `visibilityTimeout`. Workers periodically heartbeat to extend the lease. If a worker crashes, the lease expires automatically and the job is picked up by another active worker — guaranteeing **at-least-once delivery**.
+</details>
+
+<details>
+<summary><b>Why PostgreSQL for state persistence alongside Redis?</b></summary>
+
+Redis is ephemeral by nature. PostgreSQL stores durable job history, audit logs, DAG state, and DLQ records. This gives HyperQueue both the **speed of Redis** for hot-path operations and the **durability of PostgreSQL** for compliance and observability.
 </details>
 
 ---
 
 ## 📄 License
-MIT © HyperQueue Contributors
+MIT © Aditya Gupta
