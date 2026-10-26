@@ -9,6 +9,7 @@
 [![k6](https://img.shields.io/badge/k6-Load%20Testing-7D64FF.svg?style=flat-square&logo=k6&logoColor=white)](https://k6.io/)
 [![CI](https://github.com/adityagupta2716-hub/hyperqueue/actions/workflows/ci.yml/badge.svg)](https://github.com/adityagupta2716-hub/hyperqueue/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+[![Live Dashboard](https://img.shields.io/badge/Live%20Dashboard-%E2%86%92%20localhost%3A3000-brightgreen?style=flat-square&logo=googlechrome&logoColor=white)](http://localhost:3000)
 
 HyperQueue is an enterprise-grade distributed job scheduler and workflow engine designed for **high throughput**, **atomic task leasing**, and **zero double-processing guarantees** under heavy concurrency — inspired by the internals of systems like AWS SQS and Celery.
 
